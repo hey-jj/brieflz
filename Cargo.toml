@@ -2,9 +2,19 @@
 name = "brieflz"
 version = "0.1.0"
 edition = "2021"
-description = "in-memory LZ77 compress/decompress codec"
-license = "MIT"
+description = "in-memory LZ77/LZSS compress and decompress codec with a multi-level optimal-parse encoder"
+license = "Zlib"
 repository = "https://github.com/hey-jj/brieflz"
 readme = "README.md"
+keywords = ["compression", "lz77", "codec", "decompress", "no-std"]
+categories = ["compression", "no-std"]
+
+[features]
+default = ["std"]
+std = []
+proptest = ["dep:proptest"]
 
 [dependencies]
+proptest = { version = "1", optional = true }
+
+[dev-dependencies]
