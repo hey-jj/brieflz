@@ -162,7 +162,8 @@ pub fn depack(src: &[u8], dst: &mut [u8], depacked_size: usize) -> usize {
 /// Reads at most `src.len()` bytes and writes at most `depacked_size` bytes.
 /// Returns the byte count written, which equals `depacked_size` on success.
 /// Returns [`Error::MalformedInput`] on any truncated, malformed, or
-/// out-of-range input. Returns `Ok(0)` for `depacked_size == 0`.
+/// out-of-range input, or when `dst` is shorter than `depacked_size`. Returns
+/// `Ok(0)` for `depacked_size == 0`.
 pub fn depack_safe(src: &[u8], dst: &mut [u8], depacked_size: usize) -> Result<usize, Error> {
     decode::depack_safe(src, dst, depacked_size)
 }

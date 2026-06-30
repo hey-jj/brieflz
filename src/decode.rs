@@ -79,6 +79,9 @@ fn getgamma(src: &[u8], sp: &mut usize, tag: &mut u32, bits_left: &mut i32) -> u
 /// truncated, malformed, or out-of-range input. Returns `Ok(0)` for
 /// `depacked_size == 0`.
 pub fn depack_safe(src: &[u8], dst: &mut [u8], depacked_size: usize) -> Result<usize, Error> {
+    if depacked_size > dst.len() {
+        return Err(Error::MalformedInput);
+    }
     let mut st = SafeState {
         src,
         sp: 0,

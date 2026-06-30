@@ -19,6 +19,16 @@ fn safe_decoder_rejects_malformed() {
     }
 }
 
+/// A `depacked_size` larger than `dst` makes the safe decoder report an error
+/// instead of writing past the buffer.
+#[test]
+fn safe_decoder_rejects_too_small_output() {
+    assert_eq!(
+        brieflz::depack_safe(&[0x42], &mut [], 1),
+        Err(brieflz::Error::MalformedInput)
+    );
+}
+
 /// Both decoders return zero for an empty request and leave `dst` untouched.
 #[test]
 fn empty_decode() {
