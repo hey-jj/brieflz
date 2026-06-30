@@ -1,0 +1,42 @@
+//! Decoder edge cases: empty input and the malformed-stream negative path.
+
+mod common;
+
+use common::ERRORS;
+
+/// Every malformed stream makes the safe decoder report an error.
+#[test]
+fn safe_decoder_rejects_malformed() {
+    let mut sink = vec![0u8; 4093];
+    for (i, case) in ERRORS.iter().enumerate() {
+        let src = &case.data[..case.src_size];
+        let res = brieflz::depack_safe(src, &mut sink, case.depacked_size);
+        assert_eq!(
+            res,
+            Err(brieflz::Error::MalformedInput),
+            "error case {i} should fail"
+        );
+    }
+}
+
+/// Both decoders return zero for an empty request and touch nothing.
+#[test]
+fn empty_decode() {
+    let src = [0u8; 0];
+    let mut dst = [0u8; 0];
+    assert_eq!(brieflz::depack_safe(&src, &mut dst, 0), Ok(0));
+    assert_eq!(brieflz::depack(&src, &mut dst, 0), 0);
+}
+
+/// Empty compression returns zero and writes nothing.
+#[test]
+fn empty_pack() {
+    let mut dst = [0u8; 0];
+    let mut work = vec![0u32; brieflz::workmem_size(0) / 4];
+    assert_eq!(brieflz::pack(&[], &mut dst, &mut work), 0);
+    for level in 1..=10 {
+        let words = brieflz::workmem_size_level(0, level).unwrap() / 4;
+        let mut w = vec![0u32; words.max(1)];
+        assert_eq!(brieflz::pack_level(&[], &mut dst, &mut w, level), Ok(0));
+    }
+}
