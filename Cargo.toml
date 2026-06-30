@@ -12,9 +12,7 @@ categories = ["compression", "no-std"]
 [features]
 default = ["std"]
 std = []
-proptest = ["dep:proptest"]
 
 [dependencies]
-proptest = { version = "1", optional = true }
 
 [dev-dependencies]
