@@ -47,12 +47,12 @@ pub fn pack(src: &[u8], dst: &mut [u8], workmem: &mut [u32]) -> usize {
             }
         }
 
-        let pos_u = pos as usize;
         // Encode a match when it beats four literals. Length four only counts
         // when its offset is small, since a distant length-four match costs
-        // more bits than four literals.
+        // more bits than four literals. `pos` is a valid position whenever
+        // `len >= 4`, so the offset is computed once inside the branch.
         if len > 4 || (len == 4 && (cur as u32) - pos - 1 < 0x7E00) {
-            let offs = (cur - pos_u - 1) as u32;
+            let offs = (cur as u32) - pos - 1;
             bw.put_match(len as u32, offs);
             cur += len;
         } else {
