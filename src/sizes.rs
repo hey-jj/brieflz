@@ -7,15 +7,16 @@ use crate::common::LOOKUP_SIZE;
 
 const WORD: usize = 4;
 
-/// Scratch bytes for level 1. Independent of `src_size`.
+/// Scratch bytes for level 1. The level-1 parser uses a fixed-size table, so
+/// this does not depend on the input size.
 #[must_use]
-pub fn workmem_size(_src_size: usize) -> usize {
+pub fn workmem_size() -> usize {
     LOOKUP_SIZE * WORD
 }
 
 /// Scratch bytes for `level`. `None` for a level outside `1..=10`.
 #[must_use]
-pub fn workmem_size_level(src_size: usize, level: i32) -> Option<usize> {
+pub fn workmem_size_level(src_size: usize, level: u8) -> Option<usize> {
     let words = match level {
         1 | 2 => LOOKUP_SIZE,
         3 => LOOKUP_SIZE * 2,

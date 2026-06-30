@@ -5,10 +5,10 @@
 //! cost it extends to the left so repeated patterns resolve without searching
 //! at every position.
 //!
-//! The scratch arrays overlap exactly as the C code lays them out so the work
-//! fits in `3 * src_size` words for large inputs. `cost` shares storage with
-//! `prev`, and `lookup` shares storage with `mpos`. The access order keeps
-//! every read ahead of the write that would clobber it.
+//! The scratch arrays overlap so the work fits in `3 * src_size` words for
+//! large inputs. `cost` shares storage with `prev`, and `lookup` shares
+//! storage with `mpos`. The access order keeps every read ahead of the write
+//! that would clobber it.
 
 use crate::bitstream::BitWriter;
 use crate::common::{hash4_bits, log2, match_cost, HASH_BITS, LOOKUP_SIZE, NO_MATCH_POS};

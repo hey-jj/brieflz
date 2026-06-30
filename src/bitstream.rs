@@ -5,13 +5,13 @@
 //! earlier in the output. The decoder reads bits back out at the high end, so
 //! a full 16-bit tag preserves emission order.
 //!
-//! Only the per-bit path is implemented. The batched lookup path in the C
-//! source is a speed optimization that produces the same bytes.
+//! Bits are written one at a time. A batched path that shifts several gamma
+//! bits at once would produce the same bytes, so it is left out for clarity.
 
 /// Writes literals, match tokens, and the tag bitstream into the output slice.
 ///
-/// The writer tracks a cursor for payload bytes and a separate index for the
-/// pending tag slot, mirroring the two output pointers of the C encoder.
+/// The writer tracks a payload cursor and a separate index for the pending
+/// tag slot.
 pub struct BitWriter<'a> {
     out: &'a mut [u8],
     /// Next free byte for payload and new tag slots.
@@ -28,8 +28,8 @@ impl<'a> BitWriter<'a> {
     /// Start a writer over `out` with the cursor at `start`.
     ///
     /// `start` is one past the verbatim first byte. The first tag slot is
-    /// reserved here, matching the C setup that writes byte zero, then claims
-    /// two bytes for the first tag.
+    /// reserved here. The caller writes byte zero, then this writer claims two
+    /// bytes for the first tag.
     pub fn new(out: &'a mut [u8], start: usize) -> Self {
         let tag_out = start;
         BitWriter {

@@ -32,7 +32,7 @@
 //! ```
 //! let data = b"abracadabra abracadabra";
 //! let mut packed = vec![0u8; brieflz::max_packed_size(data.len())];
-//! let mut work = vec![0u32; brieflz::workmem_size(data.len()) / 4];
+//! let mut work = vec![0u32; brieflz::workmem_size() / 4];
 //! let n = brieflz::pack(data, &mut packed, &mut work);
 //!
 //! let mut out = vec![0u8; data.len()];
@@ -55,15 +55,6 @@ mod sizes;
 
 pub use sizes::{workmem_size, workmem_size_level};
 
-/// Major version number.
-pub const VER_MAJOR: u32 = 1;
-/// Minor version number.
-pub const VER_MINOR: u32 = 3;
-/// Patch version number.
-pub const VER_PATCH: u32 = 0;
-/// Version number as a string.
-pub const VER_STRING: &str = "1.3.0";
-
 /// Largest source size the encoder accepts.
 ///
 /// Positions are tracked as `u32`, so the source must fit in a `u32` with
@@ -71,27 +62,12 @@ pub const VER_STRING: &str = "1.3.0";
 pub const WORD_MAX: usize = u32::MAX as usize;
 
 /// Errors returned by the fallible entry points.
-///
-/// The C interface signals failure with a single all-ones sentinel
-/// (`(unsigned long) -1`). This enum splits that sentinel into named cases
-/// and maps back to it through [`Error::as_sentinel`] for a future C shim.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     /// The compression level was outside the range `1..=10`.
     InvalidLevel,
     /// The decoder hit truncated, malformed, or out-of-range input.
     MalformedInput,
-}
-
-impl Error {
-    /// The all-ones sentinel a C caller expects for this error.
-    ///
-    /// Both error cases collapse to the same value, matching the single
-    /// `BLZ_ERROR` sentinel of the C interface.
-    #[must_use]
-    pub const fn as_sentinel(self) -> usize {
-        usize::MAX
-    }
 }
 
 #[cfg(feature = "std")]
@@ -146,7 +122,7 @@ pub fn pack_level(
     src: &[u8],
     dst: &mut [u8],
     workmem: &mut [u32],
-    level: i32,
+    level: u8,
 ) -> Result<usize, Error> {
     assert!(src.len() < WORD_MAX, "src_size must be below WORD_MAX");
     let n = match level {
@@ -196,23 +172,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn version_constants_match() {
-        assert_eq!(VER_MAJOR, 1);
-        assert_eq!(VER_MINOR, 3);
-        assert_eq!(VER_PATCH, 0);
-        assert_eq!(VER_STRING, "1.3.0");
-    }
-
-    #[test]
     fn max_packed_size_formula() {
         assert_eq!(max_packed_size(0), 64);
         assert_eq!(max_packed_size(8), 8 + 1 + 64);
         assert_eq!(max_packed_size(1024), 1024 + 128 + 64);
-    }
-
-    #[test]
-    fn error_sentinel_is_all_ones() {
-        assert_eq!(Error::InvalidLevel.as_sentinel(), usize::MAX);
-        assert_eq!(Error::MalformedInput.as_sentinel(), usize::MAX);
     }
 }

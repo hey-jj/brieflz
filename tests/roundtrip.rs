@@ -8,7 +8,7 @@ mod common;
 
 use common::{pack_to_vec, Lcg, ALTERNATE, NUMBERS, ZEROES};
 
-fn sweep(data: &[u8], levels: std::ops::RangeInclusive<i32>) {
+fn sweep(data: &[u8], levels: std::ops::RangeInclusive<u8>) {
     for level in levels {
         for i in 1..data.len() {
             let prefix = &data[..i];
@@ -95,7 +95,7 @@ fn random_run_at_front_roundtrip() {
     }
 }
 
-fn check_roundtrip(buf: &[u8], level: i32) {
+fn check_roundtrip(buf: &[u8], level: u8) {
     let packed = pack_to_vec(buf, level);
     assert!(packed.len() <= brieflz::max_packed_size(buf.len()));
 

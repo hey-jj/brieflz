@@ -14,8 +14,9 @@ fn max_packed_size_formula() {
 
 #[test]
 fn level1_workmem_is_lookup_table() {
-    assert_eq!(brieflz::workmem_size(0), LOOKUP_SIZE * WORD);
-    assert_eq!(brieflz::workmem_size(99999), LOOKUP_SIZE * WORD);
+    assert_eq!(brieflz::workmem_size(), LOOKUP_SIZE * WORD);
+    // Level 1 and level 2 report the same fixed table size.
+    assert_eq!(brieflz::workmem_size_level(0, 1), Some(LOOKUP_SIZE * WORD));
 }
 
 #[test]
@@ -58,7 +59,7 @@ fn workmem_size_level_large_input_uses_three_times() {
 
 #[test]
 fn invalid_level_has_no_workmem() {
-    for level in [-1, 0, 11, 100] {
+    for level in [0, 11, 100, 255] {
         assert_eq!(brieflz::workmem_size_level(4093, level), None);
     }
 }
@@ -67,16 +68,10 @@ fn invalid_level_has_no_workmem() {
 fn invalid_level_pack_errors() {
     let mut dst = vec![0u8; brieflz::max_packed_size(4)];
     let mut work = vec![0u32; LOOKUP_SIZE];
-    for level in [-1, 0, 11, 100] {
+    for level in [0, 11, 100, 255] {
         assert_eq!(
             brieflz::pack_level(b"data", &mut dst, &mut work, level),
             Err(brieflz::Error::InvalidLevel)
         );
     }
-}
-
-#[test]
-fn error_maps_to_sentinel() {
-    assert_eq!(brieflz::Error::InvalidLevel.as_sentinel(), usize::MAX);
-    assert_eq!(brieflz::Error::MalformedInput.as_sentinel(), usize::MAX);
 }

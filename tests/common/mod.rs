@@ -108,10 +108,10 @@ pub const ERRORS: &[ErrorCase] = &[
     },
 ];
 
-/// Deterministic byte source matching the golden generator.
+/// Deterministic byte source for the round-trip and fuzz tests.
 ///
-/// A small linear congruential generator. The Rust tests and the captured
-/// golden data agree on these bytes, so the encoder check stays portable.
+/// A small linear congruential generator. A fixed seed yields the same bytes
+/// every run, so the random-shaped tests stay reproducible.
 pub struct Lcg(u32);
 
 impl Lcg {
@@ -135,7 +135,7 @@ impl Lcg {
 }
 
 /// Compress `src` at `level` into a fresh buffer and return the packed bytes.
-pub fn pack_to_vec(src: &[u8], level: i32) -> Vec<u8> {
+pub fn pack_to_vec(src: &[u8], level: u8) -> Vec<u8> {
     let mut dst = vec![0u8; brieflz::max_packed_size(src.len())];
     let words = brieflz::workmem_size_level(src.len(), level).unwrap() / 4;
     let mut work = vec![0u32; words.max(1)];
