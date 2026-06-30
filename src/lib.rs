@@ -11,7 +11,8 @@
 //!
 //! Every function takes caller-allocated buffers. Nothing here allocates.
 //! Size `dst` with [`max_packed_size`] and `workmem` with [`workmem_size`]
-//! or [`workmem_size_level`].
+//! or [`workmem_size_level`]. The `workmem` slice holds `u32` words, so divide
+//! the byte size by four for its length.
 //!
 //! # Levels
 //!
@@ -25,9 +26,34 @@
 //! only data you produced and the exact decompressed size. [`depack_safe`]
 //! validates every read and write and returns [`Error::MalformedInput`] on
 //! bad input.
+//!
+//! # Example
+//!
+//! ```
+//! let data = b"abracadabra abracadabra";
+//! let mut packed = vec![0u8; brieflz::max_packed_size(data.len())];
+//! let mut work = vec![0u32; brieflz::workmem_size(data.len()) / 4];
+//! let n = brieflz::pack(data, &mut packed, &mut work);
+//!
+//! let mut out = vec![0u8; data.len()];
+//! let got = brieflz::depack_safe(&packed[..n], &mut out, data.len()).unwrap();
+//! assert_eq!(&out[..got], data);
+//! ```
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+
+mod bitstream;
+mod btparse;
+mod common;
+mod decode;
+mod hashbucket;
+mod lazy;
+mod leparse;
+mod level1;
+mod sizes;
+
+pub use sizes::{workmem_size, workmem_size_level};
 
 /// Major version number.
 pub const VER_MAJOR: u32 = 1;
@@ -90,25 +116,6 @@ pub fn max_packed_size(src_size: usize) -> usize {
     src_size + src_size / 8 + 64
 }
 
-/// Scratch size in bytes for [`pack`] (level 1).
-///
-/// The result is a count of `u32` words times four. Allocate the `workmem`
-/// slice as `[u32; result / 4]`.
-#[must_use]
-pub fn workmem_size(_src_size: usize) -> usize {
-    let _ = _src_size;
-    unimplemented!("workmem_size: implemented with sizes module")
-}
-
-/// Scratch size in bytes for [`pack_level`] at `level`.
-///
-/// Returns `None` for a level outside `1..=10`, mirroring the C sentinel
-/// `(size_t) -1`. The byte count is a `u32`-word count times four.
-#[must_use]
-pub fn workmem_size_level(_src_size: usize, _level: i32) -> Option<usize> {
-    unimplemented!("workmem_size_level: implemented with sizes module")
-}
-
 /// Compress `src` into `dst` at level 1 and return the byte count written.
 ///
 /// `workmem` must hold at least [`workmem_size`] bytes worth of `u32` words.
@@ -120,28 +127,42 @@ pub fn workmem_size_level(_src_size: usize, _level: i32) -> Option<usize> {
 /// Panics if `src.len()` is at or above [`WORD_MAX`], or if `dst` or
 /// `workmem` is too small.
 #[must_use]
-pub fn pack(_src: &[u8], _dst: &mut [u8], _workmem: &mut [u32]) -> usize {
-    unimplemented!("pack: implemented with encode module")
+pub fn pack(src: &[u8], dst: &mut [u8], workmem: &mut [u32]) -> usize {
+    assert!(src.len() < WORD_MAX, "src_size must be below WORD_MAX");
+    level1::pack(src, dst, workmem)
 }
 
 /// Compress `src` into `dst` at `level` (1 to 10).
 ///
 /// `workmem` must hold at least [`workmem_size_level`] bytes worth of `u32`
 /// words for the same `level`. Returns the byte count written, or `0` for
-/// empty input. Returns [`Error::InvalidLevel`] for a level outside
-/// `1..=10`.
+/// empty input. Returns [`Error::InvalidLevel`] for a level outside `1..=10`.
 ///
 /// # Panics
 ///
 /// Panics if `src.len()` is at or above [`WORD_MAX`], or if `dst` or
 /// `workmem` is too small.
 pub fn pack_level(
-    _src: &[u8],
-    _dst: &mut [u8],
-    _workmem: &mut [u32],
-    _level: i32,
+    src: &[u8],
+    dst: &mut [u8],
+    workmem: &mut [u32],
+    level: i32,
 ) -> Result<usize, Error> {
-    unimplemented!("pack_level: implemented with pack_level dispatch module")
+    assert!(src.len() < WORD_MAX, "src_size must be below WORD_MAX");
+    let n = match level {
+        1 => level1::pack(src, dst, workmem),
+        2 => lazy::pack(src, dst, workmem),
+        3 => hashbucket::pack(src, dst, workmem, 2, 16),
+        4 => hashbucket::pack(src, dst, workmem, 4, 16),
+        5 => leparse::pack(src, dst, workmem, 1, 16),
+        6 => leparse::pack(src, dst, workmem, 8, 32),
+        7 => leparse::pack(src, dst, workmem, 64, 64),
+        8 => btparse::pack(src, dst, workmem, 16, 96),
+        9 => btparse::pack(src, dst, workmem, 32, 224),
+        10 => btparse::pack(src, dst, workmem, u64::MAX, u64::MAX),
+        _ => return Err(Error::InvalidLevel),
+    };
+    Ok(n)
 }
 
 /// Decompress `src` into `dst`, trusting the input.
@@ -156,8 +177,8 @@ pub fn pack_level(
 /// Reads past `src` or writes past `dst` on malformed input, which may
 /// panic. Use [`depack_safe`] for untrusted data.
 #[must_use]
-pub fn depack(_src: &[u8], _dst: &mut [u8], _depacked_size: usize) -> usize {
-    unimplemented!("depack: implemented with decode module")
+pub fn depack(src: &[u8], dst: &mut [u8], depacked_size: usize) -> usize {
+    decode::depack(src, dst, depacked_size)
 }
 
 /// Decompress `src` into `dst` with full bounds checking.
@@ -166,8 +187,8 @@ pub fn depack(_src: &[u8], _dst: &mut [u8], _depacked_size: usize) -> usize {
 /// Returns the byte count written, which equals `depacked_size` on success.
 /// Returns [`Error::MalformedInput`] on any truncated, malformed, or
 /// out-of-range input. Returns `Ok(0)` for `depacked_size == 0`.
-pub fn depack_safe(_src: &[u8], _dst: &mut [u8], _depacked_size: usize) -> Result<usize, Error> {
-    unimplemented!("depack_safe: implemented with decode_safe module")
+pub fn depack_safe(src: &[u8], dst: &mut [u8], depacked_size: usize) -> Result<usize, Error> {
+    decode::depack_safe(src, dst, depacked_size)
 }
 
 #[cfg(test)]
