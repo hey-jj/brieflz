@@ -1,0 +1,10 @@
+[package]
+name = "brieflz"
+version = "0.1.0"
+edition = "2021"
+description = "in-memory LZ77 compress/decompress codec"
+license = "MIT"
+repository = "https://github.com/hey-jj/brieflz"
+readme = "README.md"
+
+[dependencies]
