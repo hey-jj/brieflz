@@ -19,24 +19,28 @@ fn safe_decoder_rejects_malformed() {
     }
 }
 
-/// Both decoders return zero for an empty request and touch nothing.
+/// Both decoders return zero for an empty request and leave `dst` untouched.
 #[test]
 fn empty_decode() {
     let src = [0u8; 0];
-    let mut dst = [0u8; 0];
+    let mut dst = [0xAAu8; 8];
     assert_eq!(brieflz::depack_safe(&src, &mut dst, 0), Ok(0));
+    assert_eq!(dst, [0xAA; 8]);
     assert_eq!(brieflz::depack(&src, &mut dst, 0), 0);
+    assert_eq!(dst, [0xAA; 8]);
 }
 
-/// Empty compression returns zero and writes nothing.
+/// Empty compression returns zero and writes nothing to `dst`.
 #[test]
 fn empty_pack() {
-    let mut dst = [0u8; 0];
-    let mut work = vec![0u32; brieflz::workmem_size(0) / 4];
+    let mut dst = [0xAAu8; 8];
+    let mut work = vec![0u32; brieflz::workmem_size() / 4];
     assert_eq!(brieflz::pack(&[], &mut dst, &mut work), 0);
+    assert_eq!(dst, [0xAA; 8]);
     for level in 1..=10 {
         let words = brieflz::workmem_size_level(0, level).unwrap() / 4;
         let mut w = vec![0u32; words.max(1)];
         assert_eq!(brieflz::pack_level(&[], &mut dst, &mut w, level), Ok(0));
+        assert_eq!(dst, [0xAA; 8], "level {level} wrote to dst");
     }
 }
