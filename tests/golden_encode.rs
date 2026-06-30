@@ -7,9 +7,9 @@
 
 mod common;
 
-use common::golden::{ALTERNATE, LARGE, NUMBERS, ZEROES};
+use common::golden::{ALTERNATE, LARGE, LARGE_INPUT, NUMBERS, ZEROES};
 
-fn check(data: &[u8], table: &[(i32, usize, &[u8])]) {
+fn check(data: &[u8], table: &[(u8, usize, &[u8])]) {
     for &(level, prefix, expected) in table {
         let got = common::pack_to_vec(&data[..prefix], level);
         assert_eq!(
@@ -36,8 +36,8 @@ fn alternate_match_golden() {
 
 #[test]
 fn large_matches_golden() {
-    for &(level, input, expected) in LARGE {
-        let got = common::pack_to_vec(input, level);
+    for &(level, expected) in LARGE {
+        let got = common::pack_to_vec(LARGE_INPUT, level);
         assert_eq!(
             got, expected,
             "encoder mismatch at level {level} on large input"

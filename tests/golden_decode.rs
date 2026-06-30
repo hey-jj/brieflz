@@ -5,9 +5,9 @@
 
 mod common;
 
-use common::golden::{ALTERNATE, LARGE, NUMBERS, ZEROES};
+use common::golden::{ALTERNATE, LARGE, LARGE_INPUT, NUMBERS, ZEROES};
 
-fn check(data: &[u8], table: &[(i32, usize, &[u8])]) {
+fn check(data: &[u8], table: &[(u8, usize, &[u8])]) {
     for &(_level, prefix, packed) in table {
         let want = &data[..prefix];
 
@@ -40,7 +40,8 @@ fn alternate_decode_golden() {
 
 #[test]
 fn large_decode_golden() {
-    for &(_level, input, packed) in LARGE {
+    let input = LARGE_INPUT;
+    for &(_level, packed) in LARGE {
         let mut out = vec![0u8; input.len()];
         assert_eq!(
             brieflz::depack_safe(packed, &mut out, input.len()).unwrap(),
