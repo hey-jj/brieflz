@@ -29,6 +29,20 @@ fn safe_decoder_rejects_too_small_output() {
     );
 }
 
+/// The safe decoder reports an error when the match length overflows.
+#[test]
+fn safe_decoder_rejects_gamma_length_overflow() {
+    let src = [
+        0x42, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0xFF, 0x00, 0x00, 0x00,
+    ];
+    let mut dst = [0u8; 2];
+
+    assert_eq!(
+        brieflz::depack_safe(&src, &mut dst, 2),
+        Err(brieflz::Error::MalformedInput)
+    );
+}
+
 /// Both decoders return zero for an empty request and leave `dst` untouched.
 #[test]
 fn empty_decode() {

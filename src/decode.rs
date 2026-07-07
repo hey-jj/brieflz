@@ -96,7 +96,11 @@ pub fn depack_safe(src: &[u8], dst: &mut [u8], depacked_size: usize) -> Result<u
         let bit = st.getbit().ok_or(Error::MalformedInput)?;
 
         if bit != 0 {
-            let len = st.getgamma().ok_or(Error::MalformedInput)? + 2;
+            let len = st
+                .getgamma()
+                .ok_or(Error::MalformedInput)?
+                .checked_add(2)
+                .ok_or(Error::MalformedInput)?;
             let mut off = st.getgamma().ok_or(Error::MalformedInput)?.wrapping_sub(2);
 
             if off >= 0x00FF_FFFF {
