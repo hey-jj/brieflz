@@ -1,6 +1,6 @@
 [package]
 name = "brieflz"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "in-memory LZ77/LZSS compress and decompress codec with a multi-level optimal-parse encoder"
 license = "Zlib"
