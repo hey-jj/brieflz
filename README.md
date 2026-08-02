@@ -2,7 +2,7 @@
 
 In-memory LZ77/LZSS codec with a multi-level optimal-parse encoder.
 
-The codec encodes literals and `(length, offset)` matches into a compact
+The codec encodes literals and `(length, offset)` matches into a
 bitstream. Control bits come from a separate 16-bit tag stream. Match
 lengths and offset high bits use a universal exp-Golomb code. There is no
 container, header, or window-size limit. The caller stores the decompressed
@@ -16,7 +16,7 @@ output decodes with either decoder.
 
 ```toml
 [dependencies]
-brieflz = "0.1"
+brieflz = "0.2"
 ```
 
 ## Buffers
